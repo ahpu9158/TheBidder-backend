@@ -9,20 +9,12 @@ const hpp = require('hpp');
 const cors = require('cors');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
-const nodemailer = require('nodemailer')
-
+const auth = require('./routes/auth');
 // Load env vars
 dotenv.config({path: './config/config.env'});
 
 connectDB();
 
-// Route files
-const hotels = require ('./routes/hotels');
-const bookings = require('./routes/bookings');
-const reviews = require('./routes/reviews');
-const rooms = require('./routes/rooms');
-const payments = require('./routes/payments');
-const auth = require('./routes/auth');
 const rateLimit = require('express-rate-limit');
     
 const app=express();
@@ -58,9 +50,12 @@ app.use(
 app.use(hpp());
 // Cookie parser
 app.use(cookieParser());
-app.use('/api-docs',swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 const PORT=process.env.PORT || 5000;
+
+app.use('/api/v1/auth',auth);
+app.use('/api/v1/rooms',require('./routes/rooms'));
+app.use('/api/v1/reports',require('./routes/reports'));
 
 process.on('unhandledRejection', (err,promise)=>{
     console.log(`Error: ${err.message}`); 
@@ -73,5 +68,8 @@ if (process.env.NODE_ENV !== "production") {
       console.log(`Server running on port ${PORT}`);
     });
   }
+
+
   
-  module.exports = app;
+
+module.exports = app;
