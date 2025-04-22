@@ -74,8 +74,21 @@ exports.voteReport = async (req, res, next) => {
 
         if (report.voted.length >= room.members.length / 2) {
             report.status = 'closed';
-            const user = await User.findById(report.theBidder);
-            room.scoreBoard[report.theBidder] = room.scoreBoard[report.theBidder] + converseScoreUtil(report.type);
+            const scoreToAdd = converseScoreUtil(report.type);
+        
+            const scoreEntry = room.scoreBoard.find(
+                (entry) => entry.user.toString() === report.theBidder.toString()
+            );
+        
+            if (scoreEntry) {
+                scoreEntry.score += scoreToAdd;
+            } else {
+                room.scoreBoard.push({
+                    user: report.theBidder,
+                    score: scoreToAdd
+                });
+            }
+        
             await room.save();
             await report.save();
         }
