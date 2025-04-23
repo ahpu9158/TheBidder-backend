@@ -1,4 +1,5 @@
 const Room = require('../models/Room');
+const Report = require('../models/Report');
 
 //@desc     get all rooms
 //@route    POST /api/v1/rooms
@@ -19,16 +20,33 @@ exports.getRooms = async (req, res, next) => {
 exports.getRoom = async (req, res, next) => {
     try {
         const room = await Room.findById(req.params.id)
+            .populate({
+                path: 'reports',
+                populate: [
+                    { path: 'reporter', select: 'name username' },
+                    { path: 'theBidder', select: 'name username' }
+                ],
+                select: 'title reporter theBidder reason type createdAt'
+            })    
             .populate('host', 'name username')
             .populate('members', 'name username')
             .populate('scoreBoard.user', 'name username')
-            .populate('reports', 'user theBidder reason type createdAt')
-            .populate({'path': 'reports', 'populate': { 'path': 'reporter', 'select': 'name username' }})
-            .populate({'path': 'reports', 'populate': { 'path': 'theBidder', 'select': 'name username' }});
+        
         if (!room) {
             return res.status(404).json({ success: false, error: 'Room not found' });
         }
-        res.status(200).json({ success: true, data: room });
+
+        const reports = await Report.find({ room: req.params.id })
+            .populate('reporter', 'name username')
+            .populate('theBidder', 'name username')
+            .populate('voted', 'name username')
+            .select('title reporter theBidder reason type createdAt voted');
+        
+        if (!reports) {
+            reports = [];
+        }
+
+        res.status(200).json({ success: true, data: room, reports });
     } catch (err) {
         res.status(400).json({ success: false });
         console.log(err.stack);

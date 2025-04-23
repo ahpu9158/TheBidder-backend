@@ -30,7 +30,6 @@ exports.createReport = async (req, res, next) => {
             room,
             reporter,
             theBidder,
-            room,
             reason,
             type
         });
@@ -62,42 +61,48 @@ exports.deleteReport = async (req, res, next) => {
 exports.voteReport = async (req, res, next) => {
     try {
         const report = await Report.findById(req.params.id);
-        const room = await Room.findById(report.room);
-
         if (!report) {
             return res.status(404).json({ success: false, error: 'Report not found' });
         }
+
+        const room = await Room.findById(report.room);
+        if (!room) {
+            return res.status(404).json({ success: false, error: 'Room not found' });
+        }
+
         if (report.voted.includes(req.user._id)) {
             return res.status(400).json({ success: false, error: 'You have already voted for this report' });
         }
 
+        report.voted.push(req.user._id); // Add vote first
 
-        if (report.voted.length >= room.members.length / 2) {
+        if (report.voted.length >= room.members.length / 2 && report.status === 'open') {
             report.status = 'closed';
             const scoreToAdd = converseScoreUtil(report.type);
-        
-            const scoreEntry = room.scoreBoard.find(
-                (entry) => entry.user.toString() === report.theBidder.toString()
-            );
-        
-            if (scoreEntry) {
-                scoreEntry.score += scoreToAdd;
-            } else {
-                room.scoreBoard.push({
-                    user: report.theBidder,
-                    score: scoreToAdd
-                });
+
+            for (const bidder of report.theBidder) {
+                const scoreEntry = room.scoreBoard.find(
+                    (entry) => entry.user.toString() === bidder._id.toString()
+                );
+                if (scoreEntry) {
+                    scoreEntry.score += scoreToAdd;
+                } else {
+                    room.scoreBoard.push({
+                        user: bidder._id,
+                        score: scoreToAdd
+                    });
+                }
             }
-        
+
             await room.save();
-            await report.save();
         }
 
-        report.voted.push(req.user._id);
         await report.save();
+
         res.status(200).json({ success: true, data: report });
+
     } catch (err) {
-        res.status(400).json({ success: false });
         console.log(err.stack);
+        res.status(400).json({ success: false, error: 'Something went wrong' });
     }
-}
+};

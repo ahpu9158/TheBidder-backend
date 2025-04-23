@@ -44,7 +44,7 @@ roomShema.virtual('reports',{
     ref: 'Report',
     localField: '_id',
     foreignField: 'room',
-    count: true
+    justOne:false
 })
 
 module.exports = mongoose.model('Room', roomShema);
