@@ -7,12 +7,12 @@ const reportSchema = new mongoose.Schema({
         trim: true,
         maxlength: [100, 'Title can not be more than 100 characters']
     },
-    reporter:{
+    reporter: {
         type: mongoose.Schema.ObjectId,
         ref: 'User',
         required: true
     },
-    theBidder:{
+    theBidder: {
         type: [mongoose.Schema.ObjectId],
         ref: 'User',
         required: true
@@ -22,11 +22,11 @@ const reportSchema = new mongoose.Schema({
         ref: 'Room',
         required: true
     },
-    reason:{
+    reason: {
         type: String,
         required: true,
     },
-    type :{
+    type: {
         type: String,
         required: true,
         enum: ['annoying', 'disturbing', 'extreme', 'infectious'],
@@ -40,6 +40,10 @@ const reportSchema = new mongoose.Schema({
         enum: ['open', 'closed'],
         default: 'open'
     },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 module.exports = mongoose.model('Report', reportSchema);

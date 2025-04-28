@@ -36,11 +36,18 @@ exports.getRoom = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Room not found' });
         }
 
-        const reports = await Report.find({ room: req.params.id })
+        let reports = await Report.find({ room: req.params.id })
             .populate('reporter', 'name username')
             .populate('theBidder', 'name username')
             .populate('voted', 'name username')
             .select('title reporter theBidder reason type createdAt voted');
+
+        reports = reports.sort((a, b) => {
+            
+            return new Date(b.createdAt) - new Date(a.createdAt);
+            
+        });
+
         
         if (!reports) {
             reports = [];

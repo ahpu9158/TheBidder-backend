@@ -11,6 +11,18 @@ const { converseScoreUtil } = require('../utils/converseScoreUtil');
 exports.getReports = async (req, res, next) => {
     try {
         const reports = await Report.find();
+        reports.sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+            if (a.createdAt && !b.createdAt) {
+            return -1; // a comes first
+            }
+            if (!a.createdAt && b.createdAt) {
+            return 1; // b comes first
+            }
+            return a.title.localeCompare(b.title);
+        });
         res.status(200).json({ success: true, data: reports });
     } catch (err) {
         res.status(400).json({ success: false });
@@ -75,17 +87,19 @@ exports.voteReport = async (req, res, next) => {
         }
 
         report.voted.push(req.user._id); // Add vote first
-
-        if (report.voted.length >= room.members.length / 2 && report.status === 'open') {
+        console.log("report.voted.length", report.voted.length)
+        if (report.voted.length >= 4 && report.status === 'open') {
             report.status = 'closed';
             const scoreToAdd = converseScoreUtil(report.type);
-
+            console.log(report.theBidder)
             for (const bidder of report.theBidder) {
+                console.log("bidder", bidder)
                 const scoreEntry = room.scoreBoard.find(
                     (entry) => entry.user.toString() === bidder._id.toString()
                 );
                 if (scoreEntry) {
                     scoreEntry.score += scoreToAdd;
+                    console.log(scoreEntry)
                 } else {
                     room.scoreBoard.push({
                         user: bidder._id,
